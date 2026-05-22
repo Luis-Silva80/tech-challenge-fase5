@@ -31,3 +31,5 @@ class AnalysisResponse(BaseModel):
     status: ProcessingStatus
     report: AnalysisReport | None = None
     error: str | None = None
+    message: str | None = None 
+    job_id: str | None = None

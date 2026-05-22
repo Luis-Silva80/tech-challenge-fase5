@@ -2,7 +2,9 @@ import json
 import google.generativeai as genai
 from app.core.config import settings
 from app.core.guardrails import validate_output_report
-from app.models.schemas import AnalysisReport
+from app.models.schemas import AnalysisReport, ProcessingStatus
+from bson import ObjectId
+from app.database.database import get_db
 
 genai.configure(api_key=settings.GEMINI_API_KEY)
 
@@ -42,7 +44,8 @@ Regras obrigatórias:
 - Se a imagem não for um diagrama de arquitetura, retorne um JSON com summary explicando isso e listas vazias
 """
 
-def analyze_diagram(image_base64: str, mime_type: str) -> AnalysisReport:
+async def analyze_diagram(image_base64: str, mime_type: str, job_id: str) -> AnalysisReport:
+    print(f'--Chegou no principal')
     """
     Envia o diagrama ao Gemini e retorna o relatório validado.
     """
@@ -54,6 +57,14 @@ def analyze_diagram(image_base64: str, mime_type: str) -> AnalysisReport:
             "data": image_base64,
         }
     }
+    
+    db = get_db()
+    
+    # 1. Atualiza o status para "processando"
+    await db.jobs.update_one(
+        {"_id": ObjectId(job_id)},
+        {"$set": {"status": ProcessingStatus.PROCESSING}}
+    )
 
     response = model.generate_content([PROMPT_TEMPLATE, image_part])
 
@@ -70,5 +81,35 @@ def analyze_diagram(image_base64: str, mime_type: str) -> AnalysisReport:
     except json.JSONDecodeError as e:
         raise ValueError(f"Resposta da IA não é um JSON válido: {e}\nResposta: {raw_text}")
 
-    # Guardrail de saída
-    return validate_output_report(report_dict)
+    # # Guardrail de saída
+    # return validate_output_report(report_dict)
+  
+    print(f'---Finalizando analise')
+  
+    try:
+      # Guardrail de saída
+      report = validate_output_report(report_dict)
+      print(f'---Finalizou o Guardaill: {report.model_dump()}')
+      await db.jobs.update_one(
+          {"_id": ObjectId(job_id)},
+          {"$set": {
+              "status": ProcessingStatus.ANALYZED,
+              "relatorio": report.model_dump()
+          }}
+      )
+    except ValueError as e:
+      await db.jobs.update_one(
+          {"_id": ObjectId(job_id)},
+          {"$set": {
+              "status": ProcessingStatus.ERROR,
+              "erro": e
+          }}
+      )
+    except Exception as e:
+      await db.jobs.update_one(
+          {"_id": ObjectId(job_id)},
+          {"$set": {
+              "status": ProcessingStatus.ERROR,
+              "exception": e
+          }}
+      )
