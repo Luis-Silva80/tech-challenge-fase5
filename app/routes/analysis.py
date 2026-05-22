@@ -27,10 +27,10 @@ async def analyze_architecture(
     
     # Cria o registro inicial no banco de dados
     novo_job = {
-        "nome_arquivo": file.filename,
+        "filename": file.filename,
         "status": ProcessingStatus.RECEIVED,
         "x_architect_id": x_architect_id,
-        "relatorio": None
+        "report": None
     }
 
     # Uso do Repositório:
@@ -64,8 +64,8 @@ async def check_status(job_id: str, x_architect_id: str = Header(..., descriptio
     return {
         "job_id": str(job["_id"]),
         "status": job["status"],
-        "nome_arquivo": job["nome_arquivo"],
-        "relatorio": job.get("relatorio")
+        "filename": job["filename"],
+        "report": job.get("report")
     }
 
 @router.get("/all/diagrams")
@@ -91,8 +91,8 @@ async def get_all_diagrams(
         jobs_formatados.append({
             "job_id": str(job["_id"]),
             "status": job["status"],
-            "nome_arquivo": job.get("nome_arquivo", "Desconhecido"),
-            "relatorio": job.get("relatorio")
+            "filename": job.get("filename", "Desconhecido"),
+            "report": job.get("report")
         })
         
     return {

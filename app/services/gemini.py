@@ -87,7 +87,7 @@ async def analyze_diagram(image_base64: str, mime_type: str, job_id: str) -> Ana
           {"_id": ObjectId(job_id)},
           {"$set": {
               "status": ProcessingStatus.ANALYZED,
-              "relatorio": report.model_dump()
+              "report": report.model_dump()
           }}
       )
     except ValueError as e:
