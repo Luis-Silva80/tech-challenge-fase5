@@ -45,7 +45,6 @@ Regras obrigatórias:
 """
 
 async def analyze_diagram(image_base64: str, mime_type: str, job_id: str) -> AnalysisReport:
-    print(f'--Chegou no principal')
     """
     Envia o diagrama ao Gemini e retorna o relatório validado.
     """
@@ -80,16 +79,10 @@ async def analyze_diagram(image_base64: str, mime_type: str, job_id: str) -> Ana
         report_dict = json.loads(raw_text)
     except json.JSONDecodeError as e:
         raise ValueError(f"Resposta da IA não é um JSON válido: {e}\nResposta: {raw_text}")
-
-    # # Guardrail de saída
-    # return validate_output_report(report_dict)
-  
-    print(f'---Finalizando analise')
   
     try:
       # Guardrail de saída
       report = validate_output_report(report_dict)
-      print(f'---Finalizou o Guardaill: {report.model_dump()}')
       await db.jobs.update_one(
           {"_id": ObjectId(job_id)},
           {"$set": {
