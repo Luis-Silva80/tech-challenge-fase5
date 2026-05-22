@@ -14,13 +14,11 @@ async def connect_db():
     client = AsyncIOMotorClient(MONGO_URI)
     # Define o nome do banco de dados (será criado automaticamente no primeiro insert)
     db = client["diagram_analyzer_db"]
-    print("Conexão com o MongoDB estabelecida.")
 
 async def close_db():
     global client
     if client:
         client.close()
-        print("Conexão com o MongoDB encerrada.")
 
 def get_db():
     """
